@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace AuditTrail {
 
@@ -11,7 +12,38 @@ namespace AuditTrail {
     public abstract class AuditManager : IAuditManager {
 
         public virtual void LogOperation(string userName, Operation operation,
-            object current, object updated = null) {
+            object current, object updated = null)
+        {
+            try
+            {
+                AuditRecord auditRecord = LogOperationInternal(userName, operation,
+                        current, updated);
+
+                // Log to store. 
+                this.LogToStore(auditRecord);
+            }
+            catch (Exception ex)
+            {
+                // handle any unexpected exceptions
+                throw ex;
+            }
+        }
+
+        public virtual Task LogOperationAsync(string userName,
+                Operation operation, object current, object updated = null)
+        {
+
+            AuditRecord auditRecord = LogOperationInternal(userName, operation,
+                    current, updated);
+
+            // Log to store (async)
+            return LogToStoreAsync(auditRecord);
+
+        }
+
+        protected virtual AuditRecord LogOperationInternal(string userName,
+                Operation operation, object current, object updated = null)
+        {
 
             // Generate the message to be logged. Then Call(virtual) LogToStore 
             // method to write message to the appropriate store.
@@ -29,32 +61,22 @@ namespace AuditTrail {
                 throw new ArgumentException("AuditTrail.LogOperaton updated");
             }
 
-            try
-            {
-                // Construct part of message that is common to all operations.
-                string opDetails = String.Format("User:{0}, Operation:{1}, Type:{2}, " +
-                        "Time:{3}", userName, Enum.GetName(operation.GetType(),
-                        operation), current.GetType(), DateTime.Now.ToShortTimeString());
+            AuditRecord auditRecord = new AuditRecord(userName, operation,
+                    current.GetType(), DateTime.Now);
 
-                if (operation == Operation.Update)
-                {
-                    // Add the updated property details 
-                    opDetails = String.Concat(opDetails, GetObjectUpdateDetails(current, updated));
-                }
-                else
-                {
-                    // Add the property details
-                    opDetails = String.Concat(opDetails, GetObjectDetails(current));
-                }
 
-                // Log to store. 
-                this.LogToStore(opDetails);
-            }
-            catch (Exception ex)
+            if (operation == Operation.Update)
             {
-                // handle any unexpected exceptions
-                throw ex;
+                // Add the updated property details 
+                auditRecord.Details = GetObjectUpdateDetails(current, updated);
             }
+            else
+            {
+                // Add the property details
+                auditRecord.Details = GetObjectDetails(current);
+            }
+
+            return auditRecord;
         }
 
         // Using reflection, create a string listing the updated properties
@@ -102,7 +124,12 @@ namespace AuditTrail {
 
         // Virtual log (to persistent store) method.
         // Concrete classes must provide the implementation for this.
-        protected virtual void LogToStore(string opDetails)
+        protected virtual void LogToStore(AuditRecord auditRecord)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected virtual Task LogToStoreAsync(AuditRecord auditRecord)
         {
             throw new NotImplementedException();
         }

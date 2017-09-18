@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace AuditTrail
 {
@@ -21,6 +22,12 @@ namespace AuditTrail
         /// <param name="current">The object being created, read, updated or deleted</param>
         /// <param name="updated">If operation is update, the updated object</param>
         void LogOperation(string userName, Operation operation, object current, 
+                object updated = null);
+
+        /// <summary>
+        /// Async version of LogOperation
+        /// </summary>
+        Task LogOperationAsync(string userName, Operation operation, object current,
                 object updated = null);
     }
 }

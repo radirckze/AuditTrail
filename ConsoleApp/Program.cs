@@ -1,5 +1,6 @@
 ﻿using AuditTrail;
 using System;
+using System.Threading.Tasks;
 
 namespace ConsoleApp
 {
@@ -17,7 +18,8 @@ namespace ConsoleApp
 
             // Test logging a create operation
             Person person = new Person("Jon",  "Doe", 19);
-            auditManager.LogOperation("User001", Operation.Create, person);
+            Task task = auditManager.LogOperationAsync("User001", Operation.Create, person);
+            task.Wait();
 
             // Test logging an update operation (Need copy of original so cloning original)
             Person updatedPerson = new Person(person);
@@ -26,8 +28,7 @@ namespace ConsoleApp
 
             // Test logging a delete operation.
             auditManager.LogOperation("User001", Operation.Delete, updatedPerson);
-
-
+            
         }
     }
 }

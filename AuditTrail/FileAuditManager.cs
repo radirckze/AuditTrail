@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace AuditTrail
 {
@@ -20,11 +21,16 @@ namespace AuditTrail
             streamWriter.AutoFlush = true; 
         }
 
-
         // This method will append operation details to the text file
-        protected override void LogToStore(string opDetails)
+        protected override void LogToStore(AuditRecord auditRecord)
         {
-            streamWriter.WriteLine(opDetails);
+            streamWriter.WriteLine(auditRecord.ToString());
+        }
+
+        //async version of LogToStore.
+        protected override async Task LogToStoreAsync(AuditRecord auditRecord)
+        {
+            await streamWriter.WriteLineAsync(auditRecord.ToString());
         }
 
         // dispose the stream writer. 
